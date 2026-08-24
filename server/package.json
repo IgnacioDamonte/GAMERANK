@@ -1,0 +1,17 @@
+{
+  "name": "gamerank-server",
+  "version": "1.0.0",
+  "description": "App para puntuar y guardar videojuegos, usando la API pública de RAWG",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.23.0"
+  }
+}
