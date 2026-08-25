@@ -88,8 +88,8 @@ server/
   routes/ratings.js    guardar, listar y borrar puntajes
   db.js                  conexión a PostgreSQL
   server.js               arranque del servidor
-public/
-  index.html              frontend completo (HTML, CSS y JS en un solo archivo)
+  public/
+    index.html              frontend completo (HTML, CSS y JS en un solo archivo)
 ```
 
 ## Decisiones de diseño

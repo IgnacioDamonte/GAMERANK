@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GameRank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #111318;
+  --surface: #191C23;
+  --surface-2: #20242D;
+  --border: #2B3039;
+  --text: #F1F2F5;
+  --muted: #8B909C;
+  --gold: #E8B23D;
+  --gold-dim: #3A2F17;
+  --teal: #3FC1A5;
+  --danger: #E2685A;
+  --danger-dim: #2E1E1C;
+  --radius: 14px;
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+img{max-width:100%; display:block;}
+button{font-family:inherit; cursor:pointer; border:none; background:none;}
+input{font-family:inherit;}
+
+/* ---- header ---- */
+.app-header{
+  padding:calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px;
+  position:sticky; top:0; z-index:20;
+  background:color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+}
+.app-title{font-family:var(--font-display); font-weight:700; font-size:20px;}
+.app-title span{color:var(--gold);}
+
+/* ---- main / views ---- */
+.app-main{padding:16px 16px 100px;}
+.view{display:none;}
+.view.active{display:block;}
+
+.search-bar{margin-bottom:14px;}
+.search-bar input{
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  border-radius:12px; padding:13px 16px; font-size:16px; color:var(--text); outline:none;
+}
+.search-bar input:focus{border-color:var(--gold);}
+.search-bar input::placeholder{color:var(--muted);}
+
+.hint{color:var(--muted); font-size:13.5px; padding:20px 4px; text-align:center;}
+.hint.is-hidden{display:none;}
+
+.list-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.list-head h2{font-family:var(--font-display); font-size:19px; font-weight:700;}
+.list-count{font-size:12.5px; color:var(--muted);}
+
+/* ---- game grid ---- */
+.game-grid{
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;
+}
+.game-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  overflow:hidden; text-align:left;
+}
+.game-card-img{aspect-ratio:3/4; background:var(--surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden;}
+.game-card-img img{width:100%; height:100%; object-fit:cover;}
+.game-card-img-placeholder{color:var(--muted); font-size:11px; padding:8px; text-align:center;}
+.game-card-body{padding:10px 11px 12px;}
+.game-card-name{font-size:13px; font-weight:600; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.game-card-meta{display:flex; align-items:center; justify-content:space-between;}
+.game-card-year{font-size:11px; color:var(--muted);}
+.game-card-score{
+  font-size:12px; font-weight:700; color:var(--gold);
+  background:var(--gold-dim); padding:2px 8px; border-radius:999px;
+}
+
+/* ---- tab bar ---- */
+.tab-bar{
+  position:fixed; bottom:0; left:0; right:0; z-index:30;
+  display:flex;
+  background:color-mix(in srgb, var(--surface) 96%, transparent);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--border);
+  padding:8px 0 calc(env(safe-area-inset-bottom, 0px) + 8px);
+}
+.tab-btn{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  color:var(--muted); font-size:11px; font-weight:500; padding:6px 0;
+}
+.tab-btn.active{color:var(--gold);}
+.tab-icon{font-size:19px;}
+
+/* ---- rating sheet (bottom modal) ---- */
+.sheet-overlay{
+  position:fixed; inset:0; z-index:40;
+  background:rgba(0,0,0,.5);
+  opacity:0; pointer-events:none; transition:opacity .2s ease;
+}
+.sheet-overlay.is-open{opacity:1; pointer-events:auto;}
+
+.rating-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
+  background:var(--surface);
+  border-radius:20px 20px 0 0;
+  padding:10px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  transform:translateY(100%);
+  transition:transform .25s ease;
+  max-height:88vh; overflow-y:auto;
+}
+.rating-sheet.is-open{transform:translateY(0);}
+
+.sheet-handle{width:36px; height:4px; background:var(--border); border-radius:2px; margin:6px auto 14px;}
+
+.sheet-game{display:flex; align-items:center; gap:12px; margin-bottom:20px;}
+.sheet-cover{width:56px; height:56px; border-radius:10px; object-fit:cover; background:var(--surface-2); flex:none;}
+.sheet-name{font-weight:700; font-size:15px; margin-bottom:2px;}
+.sheet-avg{font-size:13px; color:var(--muted);}
+.sheet-avg span{color:var(--gold); font-weight:700; font-size:16px;}
+
+.sliders{display:flex; flex-direction:column; gap:16px; margin-bottom:22px;}
+.slider-row label{
+  display:flex; justify-content:space-between; font-size:13.5px; font-weight:600; margin-bottom:8px;
+}
+.slider-row .slider-value{color:var(--gold); font-weight:700;}
+.slider-row input[type="range"]{
+  width:100%; height:6px; border-radius:3px; background:var(--surface-2);
+  -webkit-appearance:none; appearance:none; outline:none;
+}
+.slider-row input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance:none; appearance:none;
+  width:24px; height:24px; border-radius:50%; background:var(--gold);
+  border:3px solid var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+
+.sheet-actions{display:flex; flex-direction:column; gap:10px;}
+.btn-primary{background:var(--gold); color:#211A0C; border-radius:12px; padding:14px 0; font-weight:700; font-size:15px; text-align:center;}
+.btn-danger{background:var(--danger-dim); color:var(--danger); border-radius:12px; padding:13px 0; font-weight:600; font-size:14px; text-align:center;}
+.btn-ghost{color:var(--muted); padding:8px 0; font-size:14px; text-align:center;}
+
+/* ---- toast ---- */
+.toast{
+  position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom, 0px) + 90px);
+  transform:translateX(-50%) translateY(20px);
+  background:var(--surface-2); border:1px solid var(--border); color:var(--text);
+  padding:11px 18px; border-radius:10px; font-size:13.5px;
+  opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  z-index:60; max-width:88vw; text-align:center;
+}
+.toast.is-visible{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.rawg-credit{
+  text-align:center; font-size:10.5px; color:var(--muted);
+  padding:4px 0 calc(env(safe-area-inset-bottom, 0px) + 78px);
+}
+.rawg-credit a{color:var(--muted); text-decoration:underline;}
+
+@media (min-width:520px){
+  .game-grid{grid-template-columns:repeat(3, 1fr);}
+}
+
+</style>
+</head>
+<body>
+
+  <header class="app-header">
+    <span class="app-title">Game<span>Rank</span></span>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ===== BUSCAR ===== -->
+    <section class="view active" id="view-buscar">
+      <div class="search-bar">
+        <input type="search" id="searchInput" placeholder="Buscar un juego..." autocomplete="off">
+      </div>
+      <p class="hint" id="searchHint">Escribí el nombre de un juego para empezar.</p>
+      <div class="game-grid" id="searchResults"></div>
+    </section>
+
+    <!-- ===== MI LISTA ===== -->
+    <section class="view" id="view-lista">
+      <div class="list-head">
+        <h2>Mi lista</h2>
+        <span class="list-count" id="listCount"></span>
+      </div>
+      <p class="hint" id="listEmpty">Todavía no puntuaste ningún juego.</p>
+      <div class="game-grid" id="myList"></div>
+    </section>
+
+  </main>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-view="buscar">
+      <span class="tab-icon">🔍</span>
+      <span>Buscar</span>
+    </button>
+    <button class="tab-btn" data-view="lista">
+      <span class="tab-icon">★</span>
+      <span>Mi lista</span>
+    </button>
+  </nav>
+
+  <!-- ===== MODAL DE PUNTAJE ===== -->
+  <div class="sheet-overlay" id="sheetOverlay"></div>
+  <div class="rating-sheet" id="ratingSheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-game">
+      <img id="sheetImage" src="" alt="" class="sheet-cover">
+      <div>
+        <p class="sheet-name" id="sheetName">—</p>
+        <p class="sheet-avg"><span id="sheetAvgNumber">—</span> / 10</p>
+      </div>
+    </div>
+
+    <div class="sliders" id="sliders">
+      <!-- generado por JS -->
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn-primary" id="saveRatingBtn">Guardar</button>
+      <button class="btn-danger" id="deleteRatingBtn" hidden>Quitar de mi lista</button>
+      <button class="btn-ghost" id="cancelSheetBtn">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <p class="rawg-credit">Datos de juegos: <a href="https://rawg.io" target="_blank" rel="noopener">RAWG.io</a></p>
+
+  <script>
+const CATEGORIAS = [
+  { key: 'graficos', label: 'Gráficos' },
+  { key: 'arte', label: 'Diseño artístico' },
+  { key: 'musica', label: 'Música' },
+  { key: 'animaciones', label: 'Animaciones' },
+  { key: 'mecanicas', label: 'Mecánicas' },
+  { key: 'historia', label: 'Historia' },
+];
+
+const el = {
+  tabBtns: document.querySelectorAll('.tab-btn'),
+  views: document.querySelectorAll('.view'),
+  searchInput: document.getElementById('searchInput'),
+  searchHint: document.getElementById('searchHint'),
+  searchResults: document.getElementById('searchResults'),
+  myList: document.getElementById('myList'),
+  listEmpty: document.getElementById('listEmpty'),
+  listCount: document.getElementById('listCount'),
+  sheetOverlay: document.getElementById('sheetOverlay'),
+  ratingSheet: document.getElementById('ratingSheet'),
+  sheetImage: document.getElementById('sheetImage'),
+  sheetName: document.getElementById('sheetName'),
+  sheetAvgNumber: document.getElementById('sheetAvgNumber'),
+  sliders: document.getElementById('sliders'),
+  saveRatingBtn: document.getElementById('saveRatingBtn'),
+  deleteRatingBtn: document.getElementById('deleteRatingBtn'),
+  cancelSheetBtn: document.getElementById('cancelSheetBtn'),
+  toast: document.getElementById('toast'),
+};
+
+let currentGame = null; // { rawgId, name, backgroundImage, released, existing? }
+let myRatingsCache = [];
+
+// ---------- Navegación por tabs ----------
+el.tabBtns.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-view');
+    el.tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
+    el.views.forEach((v) => v.classList.toggle('active', v.id === `view-${target}`));
+    if (target === 'lista') loadMyList();
+  });
+});
+
+// ---------- Toast ----------
+let toastTimer = null;
+function showToast(message) {
+  el.toast.textContent = message;
+  el.toast.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.remove('is-visible'), 2400);
+}
+
+// ---------- API helpers ----------
+async function apiGet(path) {
+  const res = await fetch(path);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error de red');
+  return data;
+}
+
+async function apiSend(path, method, body) {
+  const res = await fetch(path, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Error de red');
+  return data;
+}
+
+// ---------- Búsqueda ----------
+let searchDebounce = null;
+el.searchInput.addEventListener('input', () => {
+  clearTimeout(searchDebounce);
+  const q = el.searchInput.value.trim();
+  if (!q) {
+    el.searchResults.innerHTML = '';
+    el.searchHint.textContent = 'Escribí el nombre de un juego para empezar.';
+    el.searchHint.classList.remove('is-hidden');
+    return;
+  }
+  searchDebounce = setTimeout(() => runSearch(q), 400);
+});
+
+async function runSearch(q) {
+  el.searchHint.textContent = 'Buscando...';
+  el.searchHint.classList.remove('is-hidden');
+  try {
+    const data = await apiGet(`/api/games/search?q=${encodeURIComponent(q)}`);
+    renderGameGrid(el.searchResults, data.results, { fromSearch: true });
+    el.searchHint.classList.toggle('is-hidden', data.results.length > 0);
+    if (data.results.length === 0) el.searchHint.textContent = 'No encontré resultados para esa búsqueda.';
+  } catch (err) {
+    el.searchResults.innerHTML = '';
+    el.searchHint.textContent = err.message || 'No se pudo buscar. Probá de nuevo.';
+    el.searchHint.classList.remove('is-hidden');
+  }
+}
+
+// ---------- Render de grilla de juegos ----------
+function renderGameGrid(container, games, { fromSearch }) {
+  container.innerHTML = '';
+  games.forEach((game) => {
+    const saved = myRatingsCache.find((r) => r.rawg_id === game.rawgId);
+    const card = document.createElement('button');
+    card.className = 'game-card';
+    const year = (game.released || '').slice(0, 4);
+    const img = game.backgroundImage || game.background_image;
+    const promedio = saved ? saved.promedio : null;
+
+    card.innerHTML = `
+      <div class="game-card-img">
+        ${img ? `<img src="${img}" alt="${game.name}" loading="lazy">` : `<span class="game-card-img-placeholder">Sin imagen</span>`}
+      </div>
+      <div class="game-card-body">
+        <p class="game-card-name">${game.name}</p>
+        <div class="game-card-meta">
+          <span class="game-card-year">${year || ''}</span>
+          ${promedio !== null ? `<span class="game-card-score">★ ${promedio}</span>` : ''}
+        </div>
+      </div>
+    `;
+
+    card.addEventListener('click', () => {
+      openRatingSheet({
+        rawgId: game.rawgId,
+        name: game.name,
+        backgroundImage: img,
+        released: game.released,
+        existing: saved || null,
+      });
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// ---------- Mi lista ----------
+async function loadMyList() {
+  try {
+    const data = await apiGet('/api/ratings');
+    myRatingsCache = data.ratings;
+    el.listCount.textContent = data.ratings.length ? `${data.ratings.length} juego${data.ratings.length === 1 ? '' : 's'}` : '';
+    el.listEmpty.classList.toggle('is-hidden', data.ratings.length > 0);
+    renderGameGrid(el.myList, data.ratings.map((r) => ({
+      rawgId: r.rawg_id,
+      name: r.name,
+      backgroundImage: r.background_image,
+      released: r.released,
+    })), { fromSearch: false });
+  } catch (err) {
+    el.listEmpty.textContent = err.message || 'No se pudo cargar tu lista.';
+    el.listEmpty.classList.remove('is-hidden');
+  }
+}
+
+// ---------- Bottom sheet de puntaje ----------
+function openRatingSheet(game) {
+  currentGame = game;
+  el.sheetImage.src = game.backgroundImage || '';
+  el.sheetImage.style.visibility = game.backgroundImage ? 'visible' : 'hidden';
+  el.sheetName.textContent = game.name;
+  el.deleteRatingBtn.hidden = !game.existing;
+
+  el.sliders.innerHTML = '';
+  CATEGORIAS.forEach(({ key, label }) => {
+    const startValue = game.existing ? game.existing[key] : 7;
+    const row = document.createElement('div');
+    row.className = 'slider-row';
+    row.innerHTML = `
+      <label>
+        <span>${label}</span>
+        <span class="slider-value" data-value-for="${key}">${startValue}</span>
+      </label>
+      <input type="range" min="1" max="10" step="0.5" value="${startValue}" data-slider="${key}">
+    `;
+    el.sliders.appendChild(row);
+  });
+
+  el.sliders.querySelectorAll('input[type="range"]').forEach((input) => {
+    input.addEventListener('input', updateSheetAverage);
+  });
+
+  updateSheetAverage();
+
+  el.sheetOverlay.classList.add('is-open');
+  el.ratingSheet.classList.add('is-open');
+  el.ratingSheet.setAttribute('aria-hidden', 'false');
+}
+
+function closeRatingSheet() {
+  el.sheetOverlay.classList.remove('is-open');
+  el.ratingSheet.classList.remove('is-open');
+  el.ratingSheet.setAttribute('aria-hidden', 'true');
+  currentGame = null;
+}
+
+function getSliderValues() {
+  const values = {};
+  el.sliders.querySelectorAll('input[type="range"]').forEach((input) => {
+    values[input.getAttribute('data-slider')] = Number(input.value);
+  });
+  return values;
+}
+
+function updateSheetAverage() {
+  const values = getSliderValues();
+  Object.entries(values).forEach(([key, value]) => {
+    const label = el.sliders.querySelector(`[data-value-for="${key}"]`);
+    if (label) label.textContent = value;
+  });
+  const suma = Object.values(values).reduce((a, b) => a + b, 0);
+  const promedio = Math.round((suma / CATEGORIAS.length) * 10) / 10;
+  el.sheetAvgNumber.textContent = Number.isFinite(promedio) ? promedio : '—';
+}
+
+el.sheetOverlay.addEventListener('click', closeRatingSheet);
+el.cancelSheetBtn.addEventListener('click', closeRatingSheet);
+
+el.saveRatingBtn.addEventListener('click', async () => {
+  if (!currentGame) return;
+  const values = getSliderValues();
+
+  try {
+    await apiSend('/api/ratings', 'POST', {
+      rawgId: currentGame.rawgId,
+      name: currentGame.name,
+      backgroundImage: currentGame.backgroundImage,
+      released: currentGame.released,
+      ...values,
+    });
+    showToast(`"${currentGame.name}" guardado en tu lista.`);
+    closeRatingSheet();
+    await loadMyList();
+    if (el.searchInput.value.trim()) runSearch(el.searchInput.value.trim());
+  } catch (err) {
+    showToast(err.message || 'No se pudo guardar.');
+  }
+});
+
+el.deleteRatingBtn.addEventListener('click', async () => {
+  if (!currentGame) return;
+  try {
+    await apiSend(`/api/ratings/${currentGame.rawgId}`, 'DELETE');
+    showToast(`"${currentGame.name}" se quitó de tu lista.`);
+    closeRatingSheet();
+    await loadMyList();
+  } catch (err) {
+    showToast(err.message || 'No se pudo quitar.');
+  }
+});
+
+// Carga inicial
+loadMyList();
+
+</script>
+</body>
+</html>
