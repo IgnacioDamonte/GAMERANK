@@ -8,23 +8,29 @@
 <title>GameRank</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg: #111318;
-  --surface: #191C23;
-  --surface-2: #20242D;
-  --border: #2B3039;
-  --text: #F1F2F5;
-  --muted: #8B909C;
-  --gold: #E8B23D;
-  --gold-dim: #3A2F17;
-  --teal: #3FC1A5;
-  --danger: #E2685A;
-  --danger-dim: #2E1E1C;
-  --radius: 14px;
+  --bg: #0A0A0F;
+  --bg-elevated: #0F0F17;
+  --surface: #16161F;
+  --surface-2: #1E1E2B;
+  --border: #2A2A3A;
+  --text: #F1F1F7;
+  --muted: #8D8DA3;
+  --neon: #B026FF;
+  --neon-soft: #B026FF26;
+  --neon-dim: #2A1640;
+  --cyan: #29F1C6;
+  --cyan-dim: #123330;
+  --gold: #FFC738;
+  --gold-dim: #3A2E10;
+  --danger: #FF5C7A;
+  --danger-dim: #34161E;
+  --radius: 16px;
   --font-display: 'Manrope', sans-serif;
   --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -36,61 +42,76 @@ body{
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
   overscroll-behavior-y:none;
+  background-image:
+    radial-gradient(ellipse 600px 300px at 15% 0%, var(--neon-soft), transparent 60%),
+    radial-gradient(ellipse 500px 260px at 100% 10%, #29F1C614, transparent 60%);
+  background-attachment:fixed;
 }
 img{max-width:100%; display:block;}
-button{font-family:inherit; cursor:pointer; border:none; background:none;}
+button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit;}
 input{font-family:inherit;}
 
 /* ---- header ---- */
 .app-header{
   padding:calc(env(safe-area-inset-top, 0px) + 16px) 20px 14px;
   position:sticky; top:0; z-index:20;
-  background:color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter:blur(8px);
+  background:color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter:blur(10px);
   border-bottom:1px solid var(--border);
 }
-.app-title{font-family:var(--font-display); font-weight:700; font-size:20px;}
-.app-title span{color:var(--gold);}
+.app-title{font-family:var(--font-display); font-weight:800; font-size:21px; letter-spacing:-.01em;}
+.app-title span{color:var(--neon); text-shadow:0 0 18px var(--neon-soft);}
 
 /* ---- main / views ---- */
 .app-main{padding:16px 16px 100px;}
 .view{display:none;}
 .view.active{display:block;}
 
-.search-bar{margin-bottom:14px;}
+.search-bar{margin-bottom:14px; position:relative;}
 .search-bar input{
   width:100%; background:var(--surface); border:1px solid var(--border);
   border-radius:12px; padding:13px 16px; font-size:16px; color:var(--text); outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
 }
-.search-bar input:focus{border-color:var(--gold);}
+.search-bar input:focus{border-color:var(--neon); box-shadow:0 0 0 3px var(--neon-soft);}
 .search-bar input::placeholder{color:var(--muted);}
 
 .hint{color:var(--muted); font-size:13.5px; padding:20px 4px; text-align:center;}
 .hint.is-hidden{display:none;}
 
 .list-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
-.list-head h2{font-family:var(--font-display); font-size:19px; font-weight:700;}
-.list-count{font-size:12.5px; color:var(--muted);}
+.list-head h2{font-family:var(--font-display); font-size:19px; font-weight:800;}
+.list-count{font-family:var(--font-mono); font-size:11.5px; color:var(--muted);}
 
-/* ---- game grid ---- */
-.game-grid{
-  display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;
-}
+/* ---- game grid / cards ---- */
+.game-grid{display:grid; grid-template-columns:repeat(2, 1fr); gap:12px;}
 .game-card{
   background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-  overflow:hidden; text-align:left;
+  overflow:hidden; text-align:left; position:relative; transition:border-color .15s ease, transform .15s ease;
 }
-.game-card-img{aspect-ratio:3/4; background:var(--surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden;}
+.game-card:active{transform:scale(.97);}
+.game-card-img{aspect-ratio:3/4; background:var(--surface-2); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;}
 .game-card-img img{width:100%; height:100%; object-fit:cover;}
 .game-card-img-placeholder{color:var(--muted); font-size:11px; padding:8px; text-align:center;}
 .game-card-body{padding:10px 11px 12px;}
-.game-card-name{font-size:13px; font-weight:600; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.game-card-name{font-size:13px; font-weight:700; line-height:1.3; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
 .game-card-meta{display:flex; align-items:center; justify-content:space-between;}
-.game-card-year{font-size:11px; color:var(--muted);}
+.game-card-year{font-family:var(--font-mono); font-size:10.5px; color:var(--muted);}
 .game-card-score{
-  font-size:12px; font-weight:700; color:var(--gold);
+  font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--gold);
   background:var(--gold-dim); padding:2px 8px; border-radius:999px;
 }
+
+.wish-btn{
+  position:absolute; top:8px; right:8px; z-index:2;
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(10,10,15,.6); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; color:#fff; border:1px solid rgba(255,255,255,.12);
+  transition:background .15s ease, transform .15s ease;
+}
+.wish-btn.is-active{background:var(--neon); box-shadow:0 0 14px var(--neon-soft);}
+.wish-btn:active{transform:scale(.88);}
 
 /* ---- tab bar ---- */
 .tab-bar{
@@ -103,15 +124,20 @@ input{font-family:inherit;}
 }
 .tab-btn{
   flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-  color:var(--muted); font-size:11px; font-weight:500; padding:6px 0;
+  color:var(--muted); font-size:11px; font-weight:600; padding:6px 0; position:relative;
 }
-.tab-btn.active{color:var(--gold);}
+.tab-btn.active{color:var(--neon);}
 .tab-icon{font-size:19px;}
+.tab-badge{
+  position:absolute; top:2px; right:calc(50% - 22px);
+  background:var(--cyan); color:#04231D; font-family:var(--font-mono); font-size:9px; font-weight:700;
+  border-radius:999px; padding:1px 5px; min-width:15px; text-align:center;
+}
 
 /* ---- rating sheet (bottom modal) ---- */
 .sheet-overlay{
   position:fixed; inset:0; z-index:40;
-  background:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.6);
   opacity:0; pointer-events:none; transition:opacity .2s ease;
 }
 .sheet-overlay.is-open{opacity:1; pointer-events:auto;}
@@ -120,6 +146,7 @@ input{font-family:inherit;}
   position:fixed; left:0; right:0; bottom:0; z-index:50;
   background:var(--surface);
   border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
   padding:10px 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
   transform:translateY(100%);
   transition:transform .25s ease;
@@ -139,19 +166,19 @@ input{font-family:inherit;}
 .slider-row label{
   display:flex; justify-content:space-between; font-size:13.5px; font-weight:600; margin-bottom:8px;
 }
-.slider-row .slider-value{color:var(--gold); font-weight:700;}
+.slider-row .slider-value{color:var(--gold); font-weight:700; font-family:var(--font-mono);}
 .slider-row input[type="range"]{
   width:100%; height:6px; border-radius:3px; background:var(--surface-2);
   -webkit-appearance:none; appearance:none; outline:none;
 }
 .slider-row input[type="range"]::-webkit-slider-thumb{
   -webkit-appearance:none; appearance:none;
-  width:24px; height:24px; border-radius:50%; background:var(--gold);
-  border:3px solid var(--surface); box-shadow:0 1px 4px rgba(0,0,0,.4);
+  width:24px; height:24px; border-radius:50%; background:var(--neon);
+  border:3px solid var(--surface); box-shadow:0 0 10px var(--neon-soft);
 }
 
 .sheet-actions{display:flex; flex-direction:column; gap:10px;}
-.btn-primary{background:var(--gold); color:#211A0C; border-radius:12px; padding:14px 0; font-weight:700; font-size:15px; text-align:center;}
+.btn-primary{background:var(--neon); color:#fff; border-radius:12px; padding:14px 0; font-weight:700; font-size:15px; text-align:center; box-shadow:0 6px 18px -6px var(--neon-soft);}
 .btn-danger{background:var(--danger-dim); color:var(--danger); border-radius:12px; padding:13px 0; font-weight:600; font-size:14px; text-align:center;}
 .btn-ghost{color:var(--muted); padding:8px 0; font-size:14px; text-align:center;}
 
@@ -162,7 +189,7 @@ input{font-family:inherit;}
   background:var(--surface-2); border:1px solid var(--border); color:var(--text);
   padding:11px 18px; border-radius:10px; font-size:13.5px;
   opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease;
-  z-index:60; max-width:88vw; text-align:center;
+  z-index:70; max-width:88vw; text-align:center;
 }
 .toast.is-visible{opacity:1; transform:translateX(-50%) translateY(0);}
 
@@ -171,6 +198,72 @@ input{font-family:inherit;}
   padding:4px 0 calc(env(safe-area-inset-bottom, 0px) + 78px);
 }
 .rawg-credit a{color:var(--muted); text-decoration:underline;}
+
+/* ---- game detail (estilo ficha Steam) ---- */
+.detail-page{
+  position:fixed; inset:0; z-index:60; background:var(--bg);
+  transform:translateY(100%); transition:transform .28s ease;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+}
+.detail-page.is-open{transform:translateY(0);}
+
+.detail-hero{position:relative; aspect-ratio:16/10; background:var(--surface-2);}
+.detail-hero img{width:100%; height:100%; object-fit:cover;}
+.detail-hero::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(10,10,15,.1) 0%, rgba(10,10,15,.35) 55%, var(--bg) 100%);
+}
+.detail-back{
+  position:absolute; top:calc(env(safe-area-inset-top, 0px) + 14px); left:14px; z-index:2;
+  width:36px; height:36px; border-radius:50%; background:rgba(10,10,15,.65); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff;
+  border:1px solid rgba(255,255,255,.14);
+}
+.detail-wish{
+  position:absolute; top:calc(env(safe-area-inset-top, 0px) + 14px); right:14px; z-index:2;
+  width:36px; height:36px; border-radius:50%; background:rgba(10,10,15,.65); backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff;
+  border:1px solid rgba(255,255,255,.14); transition:background .15s ease;
+}
+.detail-wish.is-active{background:var(--neon); box-shadow:0 0 16px var(--neon-soft);}
+
+.detail-titleblock{position:relative; z-index:2; margin-top:-54px; padding:0 20px 4px;}
+.detail-name{font-family:var(--font-display); font-weight:800; font-size:23px; line-height:1.2; margin-bottom:8px; text-shadow:0 2px 12px rgba(0,0,0,.5);}
+.detail-badges{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:4px;}
+.badge{
+  font-family:var(--font-mono); font-size:11px; font-weight:600; padding:5px 10px; border-radius:999px;
+  border:1px solid var(--border); background:var(--surface); color:var(--muted);
+}
+.badge-metacritic{color:#0A0A0F; font-weight:700; border:none;}
+.badge-mc-high{background:var(--cyan);}
+.badge-mc-mid{background:var(--gold);}
+.badge-mc-low{background:var(--danger);}
+.badge-user-score{background:var(--gold-dim); color:var(--gold); border:none;}
+.badge-tba{background:var(--neon-dim); color:var(--neon); border:none;}
+
+.detail-body{padding:20px;}
+.detail-section{margin-bottom:26px;}
+.detail-section h3{
+  font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--cyan); margin-bottom:10px;
+}
+.detail-desc{font-size:14.5px; color:var(--text); line-height:1.7; white-space:pre-line;}
+.detail-desc.is-clamped{display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden;}
+.desc-toggle{font-family:var(--font-mono); font-size:12.5px; color:var(--neon); margin-top:8px; font-weight:600;}
+
+.spec-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;}
+.spec-item h4{font-family:var(--font-mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:5px;}
+.spec-item p{font-size:13.5px; font-weight:600;}
+.tag-row{display:flex; flex-wrap:wrap; gap:7px;}
+.tag{font-size:12px; padding:6px 12px; border-radius:8px; background:var(--surface); border:1px solid var(--border); color:var(--text);}
+
+.detail-actions{display:flex; gap:10px; padding:4px 20px 24px;}
+.detail-actions .btn-primary{flex:1;}
+.rated-pill{
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  background:var(--gold-dim); color:var(--gold); border-radius:12px; padding:13px 0; font-weight:700; font-size:14px; flex:1;
+  font-family:var(--font-mono);
+}
 
 @media (min-width:520px){
   .game-grid{grid-template-columns:repeat(3, 1fr);}
@@ -195,6 +288,16 @@ input{font-family:inherit;}
       <div class="game-grid" id="searchResults"></div>
     </section>
 
+    <!-- ===== DESEADOS ===== -->
+    <section class="view" id="view-deseados">
+      <div class="list-head">
+        <h2>Deseados</h2>
+        <span class="list-count" id="wishCount"></span>
+      </div>
+      <p class="hint" id="wishEmpty">Todavía no guardaste ningún juego en deseados.</p>
+      <div class="game-grid" id="wishGrid"></div>
+    </section>
+
     <!-- ===== MI LISTA ===== -->
     <section class="view" id="view-lista">
       <div class="list-head">
@@ -212,11 +315,56 @@ input{font-family:inherit;}
       <span class="tab-icon">🔍</span>
       <span>Buscar</span>
     </button>
+    <button class="tab-btn" data-view="deseados">
+      <span class="tab-icon">♡</span>
+      <span>Deseados</span>
+    </button>
     <button class="tab-btn" data-view="lista">
       <span class="tab-icon">★</span>
       <span>Mi lista</span>
     </button>
   </nav>
+
+  <!-- ===== FICHA DE DETALLE (estilo Steam) ===== -->
+  <div class="detail-page" id="detailPage" aria-hidden="true">
+    <div class="detail-hero">
+      <img id="detailHeroImg" src="" alt="">
+      <button class="detail-back" id="detailBackBtn" aria-label="Volver">←</button>
+      <button class="detail-wish" id="detailWishBtn" aria-label="Guardar en deseados">♡</button>
+    </div>
+    <div class="detail-titleblock">
+      <h1 class="detail-name" id="detailName">—</h1>
+      <div class="detail-badges" id="detailBadges"></div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section" id="detailDescWrap">
+        <h3>Descripción</h3>
+        <p class="detail-desc is-clamped" id="detailDesc">—</p>
+        <button class="desc-toggle" id="detailDescToggle">Ver más</button>
+      </div>
+      <div class="detail-section">
+        <h3>Especificaciones</h3>
+        <div class="spec-grid">
+          <div class="spec-item"><h4>Fecha de salida</h4><p id="specReleased">—</p></div>
+          <div class="spec-item"><h4>Desarrollador</h4><p id="specDeveloper">—</p></div>
+          <div class="spec-item"><h4>Editor</h4><p id="specPublisher">—</p></div>
+          <div class="spec-item"><h4>Clasificación</h4><p id="specEsrb">—</p></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h3>Plataformas</h3>
+        <div class="tag-row" id="specPlatforms"></div>
+      </div>
+      <div class="detail-section">
+        <h3>Géneros</h3>
+        <div class="tag-row" id="specGenres"></div>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <div id="detailRatedPill" class="rated-pill" hidden></div>
+      <button class="btn-primary" id="detailRateBtn">★ Puntuar este juego</button>
+    </div>
+  </div>
 
   <!-- ===== MODAL DE PUNTAJE ===== -->
   <div class="sheet-overlay" id="sheetOverlay"></div>
@@ -264,6 +412,9 @@ const el = {
   myList: document.getElementById('myList'),
   listEmpty: document.getElementById('listEmpty'),
   listCount: document.getElementById('listCount'),
+  wishGrid: document.getElementById('wishGrid'),
+  wishEmpty: document.getElementById('wishEmpty'),
+  wishCount: document.getElementById('wishCount'),
   sheetOverlay: document.getElementById('sheetOverlay'),
   ratingSheet: document.getElementById('ratingSheet'),
   sheetImage: document.getElementById('sheetImage'),
@@ -274,10 +425,29 @@ const el = {
   deleteRatingBtn: document.getElementById('deleteRatingBtn'),
   cancelSheetBtn: document.getElementById('cancelSheetBtn'),
   toast: document.getElementById('toast'),
+  detailPage: document.getElementById('detailPage'),
+  detailBackBtn: document.getElementById('detailBackBtn'),
+  detailWishBtn: document.getElementById('detailWishBtn'),
+  detailHeroImg: document.getElementById('detailHeroImg'),
+  detailName: document.getElementById('detailName'),
+  detailBadges: document.getElementById('detailBadges'),
+  detailDescWrap: document.getElementById('detailDescWrap'),
+  detailDesc: document.getElementById('detailDesc'),
+  detailDescToggle: document.getElementById('detailDescToggle'),
+  specReleased: document.getElementById('specReleased'),
+  specDeveloper: document.getElementById('specDeveloper'),
+  specPublisher: document.getElementById('specPublisher'),
+  specEsrb: document.getElementById('specEsrb'),
+  specPlatforms: document.getElementById('specPlatforms'),
+  specGenres: document.getElementById('specGenres'),
+  detailRateBtn: document.getElementById('detailRateBtn'),
+  detailRatedPill: document.getElementById('detailRatedPill'),
 };
 
-let currentGame = null; // { rawgId, name, backgroundImage, released, existing? }
+let currentGame = null; // juego activo en el modal de puntaje
+let currentDetail = null; // juego activo en la ficha de detalle
 let myRatingsCache = [];
+let myWishlistCache = [];
 
 // ---------- Navegación por tabs ----------
 el.tabBtns.forEach((btn) => {
@@ -286,6 +456,7 @@ el.tabBtns.forEach((btn) => {
     el.tabBtns.forEach((b) => b.classList.toggle('active', b === btn));
     el.views.forEach((v) => v.classList.toggle('active', v.id === `view-${target}`));
     if (target === 'lista') loadMyList();
+    if (target === 'deseados') loadWishlist();
   });
 });
 
@@ -336,7 +507,7 @@ async function runSearch(q) {
   el.searchHint.classList.remove('is-hidden');
   try {
     const data = await apiGet(`/api/games/search?q=${encodeURIComponent(q)}`);
-    renderGameGrid(el.searchResults, data.results, { fromSearch: true });
+    renderGameGrid(el.searchResults, data.results);
     el.searchHint.classList.toggle('is-hidden', data.results.length > 0);
     if (data.results.length === 0) el.searchHint.textContent = 'No encontré resultados para esa búsqueda.';
   } catch (err) {
@@ -347,22 +518,28 @@ async function runSearch(q) {
 }
 
 // ---------- Render de grilla de juegos ----------
-function renderGameGrid(container, games, { fromSearch }) {
+function renderGameGrid(container, games) {
   container.innerHTML = '';
   games.forEach((game) => {
-    const saved = myRatingsCache.find((r) => r.rawg_id === game.rawgId);
-    const card = document.createElement('button');
-    card.className = 'game-card';
-    const year = (game.released || '').slice(0, 4);
+    const rawgId = game.rawgId ?? game.rawg_id;
+    const name = game.name;
     const img = game.backgroundImage || game.background_image;
+    const released = game.released;
+    const saved = myRatingsCache.find((r) => r.rawg_id === rawgId);
+    const wished = myWishlistCache.some((w) => w.rawg_id === rawgId);
+    const year = (released || '').slice(0, 4);
     const promedio = saved ? saved.promedio : null;
 
+    const card = document.createElement('div');
+    card.className = 'game-card';
+
     card.innerHTML = `
+      <button class="wish-btn ${wished ? 'is-active' : ''}" data-wish-toggle aria-label="Guardar en deseados">${wished ? '♥' : '♡'}</button>
       <div class="game-card-img">
-        ${img ? `<img src="${img}" alt="${game.name}" loading="lazy">` : `<span class="game-card-img-placeholder">Sin imagen</span>`}
+        ${img ? `<img src="${img}" alt="${name}" loading="lazy">` : `<span class="game-card-img-placeholder">Sin imagen</span>`}
       </div>
       <div class="game-card-body">
-        <p class="game-card-name">${game.name}</p>
+        <p class="game-card-name">${name}</p>
         <div class="game-card-meta">
           <span class="game-card-year">${year || ''}</span>
           ${promedio !== null ? `<span class="game-card-score">★ ${promedio}</span>` : ''}
@@ -370,18 +547,62 @@ function renderGameGrid(container, games, { fromSearch }) {
       </div>
     `;
 
-    card.addEventListener('click', () => {
-      openRatingSheet({
-        rawgId: game.rawgId,
-        name: game.name,
-        backgroundImage: img,
-        released: game.released,
-        existing: saved || null,
-      });
+    card.querySelector('[data-wish-toggle]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleWishlist({ rawgId, name, backgroundImage: img, released }, card.querySelector('[data-wish-toggle]'));
     });
+
+    card.addEventListener('click', () => openDetail(rawgId));
 
     container.appendChild(card);
   });
+}
+
+// ---------- Wishlist (deseados) ----------
+async function loadWishlist() {
+  try {
+    const data = await apiGet('/api/wishlist');
+    myWishlistCache = data.wishlist;
+    el.wishCount.textContent = data.wishlist.length ? `${data.wishlist.length} juego${data.wishlist.length === 1 ? '' : 's'}` : '';
+    el.wishEmpty.classList.toggle('is-hidden', data.wishlist.length > 0);
+    renderGameGrid(el.wishGrid, data.wishlist.map((w) => ({
+      rawgId: w.rawg_id, name: w.name, backgroundImage: w.background_image, released: w.released,
+    })));
+  } catch (err) {
+    el.wishEmpty.textContent = err.message || 'No se pudo cargar tu lista de deseados.';
+    el.wishEmpty.classList.remove('is-hidden');
+  }
+}
+
+async function toggleWishlist(game, btnEl) {
+  const isWished = myWishlistCache.some((w) => w.rawg_id === game.rawgId);
+  try {
+    if (isWished) {
+      await apiSend(`/api/wishlist/${game.rawgId}`, 'DELETE');
+      myWishlistCache = myWishlistCache.filter((w) => w.rawg_id !== game.rawgId);
+      showToast(`"${game.name}" se quitó de deseados.`);
+    } else {
+      await apiSend('/api/wishlist', 'POST', game);
+      myWishlistCache.push({ rawg_id: game.rawgId, name: game.name, background_image: game.backgroundImage, released: game.released });
+      showToast(`"${game.name}" guardado en deseados.`);
+    }
+    if (btnEl) {
+      const nowWished = myWishlistCache.some((w) => w.rawg_id === game.rawgId);
+      btnEl.classList.toggle('is-active', nowWished);
+      btnEl.textContent = nowWished ? '♥' : '♡';
+    }
+    if (el.views[1].classList.contains('active')) loadWishlist();
+    updateDetailWishButton(game.rawgId);
+  } catch (err) {
+    showToast(err.message || 'No se pudo actualizar deseados.');
+  }
+}
+
+function updateDetailWishButton(rawgId) {
+  if (!currentDetail || currentDetail.rawgId !== rawgId) return;
+  const wished = myWishlistCache.some((w) => w.rawg_id === rawgId);
+  el.detailWishBtn.classList.toggle('is-active', wished);
+  el.detailWishBtn.textContent = wished ? '♥' : '♡';
 }
 
 // ---------- Mi lista ----------
@@ -396,12 +617,129 @@ async function loadMyList() {
       name: r.name,
       backgroundImage: r.background_image,
       released: r.released,
-    })), { fromSearch: false });
+    })));
   } catch (err) {
     el.listEmpty.textContent = err.message || 'No se pudo cargar tu lista.';
     el.listEmpty.classList.remove('is-hidden');
   }
 }
+
+// ---------- Ficha de detalle (estilo Steam) ----------
+async function openDetail(rawgId) {
+  el.detailPage.classList.add('is-open');
+  el.detailPage.setAttribute('aria-hidden', 'false');
+  el.detailName.textContent = 'Cargando...';
+  el.detailDesc.textContent = '';
+  el.detailBadges.innerHTML = '';
+  el.specPlatforms.innerHTML = '';
+  el.specGenres.innerHTML = '';
+  el.detailHeroImg.src = '';
+  el.detailRatedPill.hidden = true;
+
+  try {
+    const data = await apiGet(`/api/games/${rawgId}`);
+    const game = data.game;
+    currentDetail = game;
+
+    el.detailHeroImg.src = game.backgroundImage || game.backgroundImageAdditional || '';
+    el.detailName.textContent = game.name;
+
+    const wished = myWishlistCache.some((w) => w.rawg_id === game.rawgId);
+    el.detailWishBtn.classList.toggle('is-active', wished);
+    el.detailWishBtn.textContent = wished ? '♥' : '♡';
+
+    // Badges: metacritic, fecha, TBA
+    el.detailBadges.innerHTML = '';
+    if (game.metacritic) {
+      const cls = game.metacritic >= 75 ? 'badge-mc-high' : game.metacritic >= 50 ? 'badge-mc-mid' : 'badge-mc-low';
+      el.detailBadges.innerHTML += `<span class="badge badge-metacritic ${cls}">Metacritic ${game.metacritic}</span>`;
+    }
+    if (game.tba) {
+      el.detailBadges.innerHTML += `<span class="badge badge-tba">Próximamente</span>`;
+    } else if (game.released) {
+      el.detailBadges.innerHTML += `<span class="badge">📅 ${formatFecha(game.released)}</span>`;
+    }
+    if (game.esrb) el.detailBadges.innerHTML += `<span class="badge">${game.esrb}</span>`;
+
+    // Descripción
+    const desc = game.description || 'Sin descripción disponible para este juego.';
+    el.detailDesc.textContent = desc;
+    el.detailDesc.classList.add('is-clamped');
+    el.detailDescToggle.textContent = 'Ver más';
+    el.detailDescToggle.hidden = desc.length < 320;
+
+    // Specs
+    el.specReleased.textContent = game.tba ? 'Todavía sin fecha' : (game.released ? formatFecha(game.released) : 'Sin datos');
+    el.specDeveloper.textContent = game.developers.length ? game.developers.join(', ') : 'Sin datos';
+    el.specPublisher.textContent = game.publishers.length ? game.publishers.join(', ') : 'Sin datos';
+    el.specEsrb.textContent = game.esrb || 'Sin clasificar';
+
+    el.specPlatforms.innerHTML = game.platforms.length
+      ? game.platforms.map((p) => `<span class="tag">${p}</span>`).join('')
+      : '<span class="tag">Sin datos</span>';
+    el.specGenres.innerHTML = game.genres.length
+      ? game.genres.map((g) => `<span class="tag">${g}</span>`).join('')
+      : '<span class="tag">Sin datos</span>';
+
+    // Pill de puntaje si ya está en Mi lista
+    const saved = myRatingsCache.find((r) => r.rawg_id === game.rawgId);
+    if (saved) {
+      el.detailRatedPill.hidden = false;
+      el.detailRatedPill.innerHTML = `★ ${saved.promedio} / 10`;
+      el.detailRateBtn.textContent = 'Editar puntaje';
+    } else {
+      el.detailRatedPill.hidden = true;
+      el.detailRateBtn.textContent = '★ Puntuar este juego';
+    }
+  } catch (err) {
+    el.detailName.textContent = 'No se pudo cargar la ficha';
+    el.detailDesc.textContent = err.message || 'Probá de nuevo en un momento.';
+  }
+}
+
+function formatFecha(iso) {
+  if (!iso) return 'Sin datos';
+  const [y, m, d] = iso.split('-');
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const mi = Number(m) - 1;
+  if (!y || mi < 0 || !meses[mi]) return iso;
+  return `${Number(d)} ${meses[mi]} ${y}`;
+}
+
+function closeDetail() {
+  el.detailPage.classList.remove('is-open');
+  el.detailPage.setAttribute('aria-hidden', 'true');
+  currentDetail = null;
+}
+
+el.detailBackBtn.addEventListener('click', closeDetail);
+
+el.detailDescToggle.addEventListener('click', () => {
+  const clamped = el.detailDesc.classList.toggle('is-clamped');
+  el.detailDescToggle.textContent = clamped ? 'Ver más' : 'Ver menos';
+});
+
+el.detailWishBtn.addEventListener('click', () => {
+  if (!currentDetail) return;
+  toggleWishlist({
+    rawgId: currentDetail.rawgId,
+    name: currentDetail.name,
+    backgroundImage: currentDetail.backgroundImage,
+    released: currentDetail.released,
+  }, el.detailWishBtn);
+});
+
+el.detailRateBtn.addEventListener('click', () => {
+  if (!currentDetail) return;
+  const saved = myRatingsCache.find((r) => r.rawg_id === currentDetail.rawgId);
+  openRatingSheet({
+    rawgId: currentDetail.rawgId,
+    name: currentDetail.name,
+    backgroundImage: currentDetail.backgroundImage,
+    released: currentDetail.released,
+    existing: saved || null,
+  });
+});
 
 // ---------- Bottom sheet de puntaje ----------
 function openRatingSheet(game) {
@@ -479,8 +817,10 @@ el.saveRatingBtn.addEventListener('click', async () => {
       ...values,
     });
     showToast(`"${currentGame.name}" guardado en tu lista.`);
+    const savedRawgId = currentGame.rawgId;
     closeRatingSheet();
     await loadMyList();
+    if (currentDetail && currentDetail.rawgId === savedRawgId) openDetail(savedRawgId);
     if (el.searchInput.value.trim()) runSearch(el.searchInput.value.trim());
   } catch (err) {
     showToast(err.message || 'No se pudo guardar.');
@@ -492,8 +832,10 @@ el.deleteRatingBtn.addEventListener('click', async () => {
   try {
     await apiSend(`/api/ratings/${currentGame.rawgId}`, 'DELETE');
     showToast(`"${currentGame.name}" se quitó de tu lista.`);
+    const removedRawgId = currentGame.rawgId;
     closeRatingSheet();
     await loadMyList();
+    if (currentDetail && currentDetail.rawgId === removedRawgId) openDetail(removedRawgId);
   } catch (err) {
     showToast(err.message || 'No se pudo quitar.');
   }
@@ -501,7 +843,7 @@ el.deleteRatingBtn.addEventListener('click', async () => {
 
 // Carga inicial
 loadMyList();
-
-</script>
+loadWishlist();
+  </script>
 </body>
 </html>

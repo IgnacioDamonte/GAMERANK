@@ -28,6 +28,17 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS wishlist (
+      id SERIAL PRIMARY KEY,
+      rawg_id INTEGER NOT NULL UNIQUE,
+      name TEXT NOT NULL,
+      background_image TEXT,
+      released TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `);
 }
 
 module.exports = { pool, initDb };

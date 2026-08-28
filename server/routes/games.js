@@ -20,6 +20,35 @@ function normalizeGame(g) {
   };
 }
 
+// Saca las etiquetas HTML que RAWG a veces mete en la descripción
+// (viene de Wikipedia/press kits, no de una API pensada para esto).
+function limpiarDescripcion(html) {
+  if (!html) return null;
+  return html.replace(/<[^>]*>/g, '').replace(/\s+\n/g, '\n').trim();
+}
+
+function normalizeGameDetail(g) {
+  return {
+    rawgId: g.id,
+    name: g.name,
+    description: limpiarDescripcion(g.description_raw || g.description),
+    backgroundImage: g.background_image || null,
+    backgroundImageAdditional: g.background_image_additional || null,
+    released: g.released || null,
+    tba: !!g.tba,
+    metacritic: g.metacritic || null,
+    website: g.website || null,
+    esrb: g.esrb_rating?.name || null,
+    playtime: g.playtime || null,
+    platforms: Array.isArray(g.platforms) ? g.platforms.map((p) => p.platform?.name).filter(Boolean) : [],
+    genres: Array.isArray(g.genres) ? g.genres.map((x) => x.name) : [],
+    developers: Array.isArray(g.developers) ? g.developers.map((x) => x.name) : [],
+    publishers: Array.isArray(g.publishers) ? g.publishers.map((x) => x.name) : [],
+    stores: Array.isArray(g.stores) ? g.stores.map((s) => s.store?.name).filter(Boolean) : [],
+    rawgRating: g.rating || null,
+  };
+}
+
 // GET /api/games/search?q=zelda
 router.get('/search', async (req, res) => {
   const q = (req.query.q || '').trim();
@@ -45,6 +74,33 @@ router.get('/search', async (req, res) => {
     const data = await response.json();
     const results = Array.isArray(data.results) ? data.results.map(normalizeGame) : [];
     res.json({ results });
+  } catch (err) {
+    console.error(err);
+    res.status(502).json({ error: 'No se pudo contactar a RAWG. Probá de nuevo en un momento.' });
+  }
+});
+
+// GET /api/games/:id — ficha completa de un juego (estilo Steam)
+router.get('/:id', async (req, res) => {
+  const id = req.params.id;
+  if (!RAWG_API_KEY) {
+    return res.status(500).json({ error: 'Falta configurar RAWG_API_KEY en el servidor. Revisá el archivo .env.' });
+  }
+
+  try {
+    const url = `${RAWG_BASE}/games/${encodeURIComponent(id)}?key=${RAWG_API_KEY}`;
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'GameRank/1.0 (personal project)' },
+    });
+
+    if (!response.ok) {
+      const detalle = await response.text().catch(() => '');
+      console.error('RAWG rechazó el detalle:', response.status, detalle.slice(0, 300));
+      return res.status(response.status).json({ error: 'No se pudo obtener la ficha del juego.', detalle: detalle.slice(0, 200) });
+    }
+
+    const data = await response.json();
+    res.json({ game: normalizeGameDetail(data) });
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: 'No se pudo contactar a RAWG. Probá de nuevo en un momento.' });

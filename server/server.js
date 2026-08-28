@@ -5,6 +5,7 @@ const express = require('express');
 const { initDb } = require('./db');
 const gamesRoutes = require('./routes/games');
 const ratingsRoutes = require('./routes/ratings');
+const wishlistRoutes = require('./routes/wishlist');
 
 const app = express();
 const PORT = process.env.PORT || 4500;
@@ -21,6 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/games', gamesRoutes);
 app.use('/api/ratings', ratingsRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
