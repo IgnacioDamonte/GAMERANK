@@ -136,14 +136,14 @@ input{font-family:inherit;}
 
 /* ---- rating sheet (bottom modal) ---- */
 .sheet-overlay{
-  position:fixed; inset:0; z-index:65;
+  position:fixed; inset:0; z-index:40;
   background:rgba(0,0,0,.6);
   opacity:0; pointer-events:none; transition:opacity .2s ease;
 }
 .sheet-overlay.is-open{opacity:1; pointer-events:auto;}
 
 .rating-sheet{
-  position:fixed; left:0; right:0; bottom:0; z-index:66;
+  position:fixed; left:0; right:0; bottom:0; z-index:50;
   background:var(--surface);
   border-radius:20px 20px 0 0;
   border-top:1px solid var(--border);
@@ -359,13 +359,6 @@ input{font-family:inherit;}
         <h3>Géneros</h3>
         <div class="tag-row" id="specGenres"></div>
       </div>
-      <div class="detail-section" id="pcReqSection" hidden>
-        <h3>Requisitos para PC</h3>
-        <div class="spec-grid">
-          <div class="spec-item"><h4>Mínimos</h4><p id="specReqMin" style="font-weight:400; white-space:pre-line; line-height:1.6;">—</p></div>
-          <div class="spec-item"><h4>Recomendados</h4><p id="specReqRec" style="font-weight:400; white-space:pre-line; line-height:1.6;">—</p></div>
-        </div>
-      </div>
     </div>
     <div class="detail-actions">
       <div id="detailRatedPill" class="rated-pill" hidden></div>
@@ -447,9 +440,6 @@ const el = {
   specEsrb: document.getElementById('specEsrb'),
   specPlatforms: document.getElementById('specPlatforms'),
   specGenres: document.getElementById('specGenres'),
-  pcReqSection: document.getElementById('pcReqSection'),
-  specReqMin: document.getElementById('specReqMin'),
-  specReqRec: document.getElementById('specReqRec'),
   detailRateBtn: document.getElementById('detailRateBtn'),
   detailRatedPill: document.getElementById('detailRatedPill'),
 };
@@ -643,7 +633,6 @@ async function openDetail(rawgId) {
   el.detailBadges.innerHTML = '';
   el.specPlatforms.innerHTML = '';
   el.specGenres.innerHTML = '';
-  el.pcReqSection.hidden = true;
   el.detailHeroImg.src = '';
   el.detailRatedPill.hidden = true;
 
@@ -691,15 +680,6 @@ async function openDetail(rawgId) {
     el.specGenres.innerHTML = game.genres.length
       ? game.genres.map((g) => `<span class="tag">${g}</span>`).join('')
       : '<span class="tag">Sin datos</span>';
-
-    // Requisitos de PC (mínimos/recomendados), si el juego los tiene cargados
-    if (game.pcRequirements && (game.pcRequirements.minimum || game.pcRequirements.recommended)) {
-      el.pcReqSection.hidden = false;
-      el.specReqMin.textContent = game.pcRequirements.minimum || 'No especificado';
-      el.specReqRec.textContent = game.pcRequirements.recommended || 'No especificado';
-    } else {
-      el.pcReqSection.hidden = true;
-    }
 
     // Pill de puntaje si ya está en Mi lista
     const saved = myRatingsCache.find((r) => r.rawg_id === game.rawgId);
