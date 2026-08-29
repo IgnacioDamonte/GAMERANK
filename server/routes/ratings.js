@@ -4,6 +4,7 @@ const { pool } = require('../db');
 const router = express.Router();
 
 const CATEGORIAS = ['graficos', 'arte', 'musica', 'animaciones', 'mecanicas', 'historia'];
+const ESTADOS_VALIDOS = ['jugando', 'completado', 'abandonado', 'pausa'];
 
 function validarPuntaje(valor) {
   const n = Number(valor);
@@ -15,10 +16,38 @@ function calcularPromedio(puntajes) {
   return Math.round((suma / CATEGORIAS.length) * 10) / 10;
 }
 
-// GET /api/ratings — lista guardada, ordenada por promedio descendente
+function parseTags(tags) {
+  if (Array.isArray(tags)) return tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 12);
+  return [];
+}
+
+// GET /api/ratings?sort=score|release|alpha|added&order=asc|desc&platform=&genre=
 router.get('/', async (req, res) => {
+  const { sort = 'score', order, platform, genre } = req.query;
+
   try {
-    const { rows } = await pool.query('SELECT * FROM ratings ORDER BY promedio DESC, name ASC');
+    let { rows } = await pool.query('SELECT * FROM ratings');
+
+    if (platform) {
+      rows = rows.filter((r) => (r.platforms || []).some((p) => p.toLowerCase().includes(String(platform).toLowerCase())));
+    }
+    if (genre) {
+      rows = rows.filter((r) => (r.genres || []).some((g) => g.toLowerCase() === String(genre).toLowerCase()));
+    }
+
+    const dir = order === 'asc' ? 1 : order === 'desc' ? -1 : null;
+
+    const comparadores = {
+      score: (a, b) => b.promedio - a.promedio || a.name.localeCompare(b.name),
+      release: (a, b) => String(b.released || '').localeCompare(String(a.released || '')),
+      alpha: (a, b) => a.name.localeCompare(b.name),
+      added: (a, b) => new Date(b.created_at) - new Date(a.created_at),
+    };
+
+    const comparador = comparadores[sort] || comparadores.score;
+    rows.sort(comparador);
+    if (dir === 1) rows.reverse();
+
     res.json({ ratings: rows });
   } catch (err) {
     console.error(err);
@@ -28,10 +57,18 @@ router.get('/', async (req, res) => {
 
 // POST /api/ratings — crea o actualiza (por rawg_id) la puntuación de un juego
 router.post('/', async (req, res) => {
-  const { rawgId, name, backgroundImage, released } = req.body || {};
+  const {
+    rawgId, name, backgroundImage, released,
+    estado, nota, tags, horasJugadas, platino,
+    genres, platforms,
+  } = req.body || {};
 
   if (!rawgId || !name) {
     return res.status(400).json({ error: 'Faltan datos del juego (rawgId y name son obligatorios).' });
+  }
+
+  if (estado && !ESTADOS_VALIDOS.includes(estado)) {
+    return res.status(400).json({ error: 'Estado inválido.' });
   }
 
   const puntajes = {};
@@ -44,6 +81,7 @@ router.post('/', async (req, res) => {
   }
 
   const promedio = calcularPromedio(puntajes);
+  const horas = horasJugadas != null && horasJugadas !== '' ? Number(horasJugadas) : null;
 
   try {
     const existing = await pool.query('SELECT id FROM ratings WHERE rawg_id = $1', [rawgId]);
@@ -51,8 +89,9 @@ router.post('/', async (req, res) => {
 
     const { rows } = await pool.query(
       `INSERT INTO ratings
-        (rawg_id, name, background_image, released, graficos, arte, musica, animaciones, mecanicas, historia, promedio)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (rawg_id, name, background_image, released, graficos, arte, musica, animaciones, mecanicas, historia, promedio,
+         estado, nota, tags, horas_jugadas, platino, genres, platforms)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
        ON CONFLICT (rawg_id) DO UPDATE SET
         name = EXCLUDED.name,
         background_image = EXCLUDED.background_image,
@@ -64,12 +103,21 @@ router.post('/', async (req, res) => {
         mecanicas = EXCLUDED.mecanicas,
         historia = EXCLUDED.historia,
         promedio = EXCLUDED.promedio,
+        estado = EXCLUDED.estado,
+        nota = EXCLUDED.nota,
+        tags = EXCLUDED.tags,
+        horas_jugadas = EXCLUDED.horas_jugadas,
+        platino = EXCLUDED.platino,
+        genres = EXCLUDED.genres,
+        platforms = EXCLUDED.platforms,
         updated_at = now()
        RETURNING *`,
       [
         rawgId, name, backgroundImage || null, released || null,
         puntajes.graficos, puntajes.arte, puntajes.musica, puntajes.animaciones, puntajes.mecanicas, puntajes.historia,
         promedio,
+        estado || null, nota || null, parseTags(tags), horas, !!platino,
+        Array.isArray(genres) ? genres : [], Array.isArray(platforms) ? platforms : [],
       ]
     );
 

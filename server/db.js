@@ -39,6 +39,25 @@ async function initDb() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
+
+  // ALTER ... ADD COLUMN IF NOT EXISTS: así esto no rompe la base de datos
+  // que ya está corriendo en producción, solo agrega lo que falte.
+  await pool.query(`
+    ALTER TABLE ratings
+      ADD COLUMN IF NOT EXISTS estado TEXT,
+      ADD COLUMN IF NOT EXISTS nota TEXT,
+      ADD COLUMN IF NOT EXISTS tags TEXT[] NOT NULL DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS horas_jugadas REAL,
+      ADD COLUMN IF NOT EXISTS platino BOOLEAN NOT NULL DEFAULT false,
+      ADD COLUMN IF NOT EXISTS genres TEXT[] NOT NULL DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS platforms TEXT[] NOT NULL DEFAULT '{}';
+  `);
+
+  await pool.query(`
+    ALTER TABLE wishlist
+      ADD COLUMN IF NOT EXISTS genres TEXT[] NOT NULL DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS platforms TEXT[] NOT NULL DEFAULT '{}';
+  `);
 }
 
 module.exports = { pool, initDb };

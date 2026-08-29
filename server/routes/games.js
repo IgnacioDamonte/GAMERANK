@@ -10,6 +10,26 @@ const RAWG_BASE = 'https://api.rawg.io/api';
 // notas) la rompe sin que se note a simple vista. La recortamos siempre.
 const RAWG_API_KEY = (process.env.RAWG_API_KEY || '').trim();
 
+// RAWG devuelve nombres de catálogo (géneros, clasificación ESRB) siempre
+// en inglés, sin importar el parámetro de idioma — son taxonomías fijas,
+// no contenido traducible por juego. Los traducimos a mano acá.
+const GENEROS_ES = {
+  'Action': 'Acción', 'Adventure': 'Aventura', 'RPG': 'Rol (RPG)',
+  'Strategy': 'Estrategia', 'Shooter': 'Disparos', 'Puzzle': 'Puzzle',
+  'Racing': 'Carreras', 'Sports': 'Deportes', 'Simulation': 'Simulación',
+  'Platformer': 'Plataformas', 'Fighting': 'Lucha', 'Family': 'Familiar',
+  'Board Games': 'Juegos de mesa', 'Educational': 'Educativo',
+  'Card': 'Cartas', 'Casual': 'Casual', 'Indie': 'Indie',
+  'Massively Multiplayer': 'Multijugador masivo', 'Arcade': 'Arcade',
+};
+const ESRB_ES = {
+  'Everyone': 'Para todo público', 'Everyone 10+': 'Mayores de 10 años',
+  'Teen': 'Adolescentes', 'Mature': 'Maduro (17+)', 'Adults Only': 'Solo adultos',
+  'Rating Pending': 'Clasificación pendiente',
+};
+function traducirGenero(nombre) { return GENEROS_ES[nombre] || nombre; }
+function traducirEsrb(nombre) { return ESRB_ES[nombre] || nombre; }
+
 function normalizeGame(g) {
   return {
     rawgId: g.id,
@@ -17,8 +37,25 @@ function normalizeGame(g) {
     backgroundImage: g.background_image || null,
     released: g.released || null,
     rawgRating: g.rating || null,
+    genres: Array.isArray(g.genres) ? g.genres.map((x) => traducirGenero(x.name)) : [],
+    platforms: Array.isArray(g.platforms) ? g.platforms.map((p) => p.platform?.name).filter(Boolean) : [],
   };
 }
+
+// Grupos de plataforma que soporta el filtro de búsqueda del front,
+// mapeados al id de "parent_platforms" que espera RAWG.
+const GRUPOS_PLATAFORMA = { pc: 1, playstation: 2, xbox: 3, switch: 7 };
+
+// Para filtrar por género hay que mandarle a RAWG el slug en inglés,
+// no el nombre traducido — armamos el mapeo inverso del diccionario de arriba.
+const SLUG_GENERO = {
+  'Acción': 'action', 'Aventura': 'adventure', 'Rol (RPG)': 'role-playing-games-rpg',
+  'Estrategia': 'strategy', 'Disparos': 'shooter', 'Puzzle': 'puzzle',
+  'Carreras': 'racing', 'Deportes': 'sports', 'Simulación': 'simulation',
+  'Plataformas': 'platformer', 'Lucha': 'fighting', 'Familiar': 'family',
+  'Indie': 'indie', 'Casual': 'casual', 'Arcade': 'arcade',
+  'Multijugador masivo': 'massively-multiplayer',
+};
 
 // Saca las etiquetas HTML que RAWG a veces mete en la descripción
 // (viene de Wikipedia/press kits, no de una API pensada para esto).
@@ -28,6 +65,19 @@ function limpiarDescripcion(html) {
 }
 
 function normalizeGameDetail(g) {
+  const platformEntries = Array.isArray(g.platforms) ? g.platforms : [];
+
+  // La entrada de PC trae requisitos de mínimos/recomendados en texto,
+  // igual que la ficha de un juego en Steam.
+  const pcEntry = platformEntries.find((p) => /pc/i.test(p.platform?.name || ''));
+  const pcReqSource = pcEntry?.requirements || pcEntry?.requirements_en || null;
+  const pcRequirements = pcReqSource
+    ? {
+        minimum: pcReqSource.minimum || null,
+        recommended: pcReqSource.recommended || null,
+      }
+    : null;
+
   return {
     rawgId: g.id,
     name: g.name,
@@ -38,10 +88,11 @@ function normalizeGameDetail(g) {
     tba: !!g.tba,
     metacritic: g.metacritic || null,
     website: g.website || null,
-    esrb: g.esrb_rating?.name || null,
+    esrb: g.esrb_rating?.name ? traducirEsrb(g.esrb_rating.name) : null,
     playtime: g.playtime || null,
-    platforms: Array.isArray(g.platforms) ? g.platforms.map((p) => p.platform?.name).filter(Boolean) : [],
-    genres: Array.isArray(g.genres) ? g.genres.map((x) => x.name) : [],
+    platforms: platformEntries.map((p) => p.platform?.name).filter(Boolean),
+    pcRequirements,
+    genres: Array.isArray(g.genres) ? g.genres.map((x) => traducirGenero(x.name)) : [],
     developers: Array.isArray(g.developers) ? g.developers.map((x) => x.name) : [],
     publishers: Array.isArray(g.publishers) ? g.publishers.map((x) => x.name) : [],
     stores: Array.isArray(g.stores) ? g.stores.map((s) => s.store?.name).filter(Boolean) : [],
@@ -49,9 +100,11 @@ function normalizeGameDetail(g) {
   };
 }
 
-// GET /api/games/search?q=zelda
+// GET /api/games/search?q=zelda&year=2020&genre=Acción&platform=pc&page=1
 router.get('/search', async (req, res) => {
   const q = (req.query.q || '').trim();
+  const { year, genre, platform, page = 1 } = req.query;
+
   if (!q) {
     return res.status(400).json({ error: 'Falta el parámetro de búsqueda "q".' });
   }
@@ -60,7 +113,18 @@ router.get('/search', async (req, res) => {
   }
 
   try {
-    const url = `${RAWG_BASE}/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(q)}&page_size=20`;
+    let url = `${RAWG_BASE}/games?key=${RAWG_API_KEY}&search=${encodeURIComponent(q)}&page_size=20&page=${Number(page) || 1}&lang=es`;
+
+    if (year && /^\d{4}$/.test(year)) {
+      url += `&dates=${year}-01-01,${year}-12-31`;
+    }
+    if (genre && SLUG_GENERO[genre]) {
+      url += `&genres=${SLUG_GENERO[genre]}`;
+    }
+    if (platform && GRUPOS_PLATAFORMA[platform]) {
+      url += `&parent_platforms=${GRUPOS_PLATAFORMA[platform]}`;
+    }
+
     const response = await fetch(url, {
       headers: { 'User-Agent': 'GameRank/1.0 (personal project)' },
     });
@@ -73,7 +137,7 @@ router.get('/search', async (req, res) => {
 
     const data = await response.json();
     const results = Array.isArray(data.results) ? data.results.map(normalizeGame) : [];
-    res.json({ results });
+    res.json({ results, hasMore: !!data.next, page: Number(page) || 1 });
   } catch (err) {
     console.error(err);
     res.status(502).json({ error: 'No se pudo contactar a RAWG. Probá de nuevo en un momento.' });
@@ -88,7 +152,7 @@ router.get('/:id', async (req, res) => {
   }
 
   try {
-    const url = `${RAWG_BASE}/games/${encodeURIComponent(id)}?key=${RAWG_API_KEY}`;
+    const url = `${RAWG_BASE}/games/${encodeURIComponent(id)}?key=${RAWG_API_KEY}&lang=es`;
     const response = await fetch(url, {
       headers: { 'User-Agent': 'GameRank/1.0 (personal project)' },
     });
